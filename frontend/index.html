@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSL/TLS Certificate Scanner</title>
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+}
+body {
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+min-height: 100vh;
+padding: 20px;
+}
+.container {
+max-width: 1200px;
+margin: 0 auto;
+}
+.header {
+text-align: center;
+margin-bottom: 2rem;
+color: white;
+}
+.header h1 {
+font-size: 2.5rem;
+margin-bottom: 0.5rem;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 1rem;
+}
+.header p {
+font-size: 1.1rem;
+opacity: 0.9;
+max-width: 600px;
+margin: 0 auto;
+}
+.scanner-card {
+background: white;
+border-radius: 15px;
+box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+padding: 2rem;
+margin-bottom: 2rem;
+}
+.scanner-modes {
+display: flex;
+gap: 1rem;
+margin-bottom: 2rem;
+}
+.mode-btn {
+padding: 12px 24px;
+border: none;
+border-radius: 10px;
+font-weight: 600;
+cursor: pointer;
+transition: all 0.3s ease;
+flex: 1;
+}
+.mode-btn.active {
+background: #667eea;
+color: white;
+box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+.mode-btn:not(.active) {
+background: #f3f4f6;
+color: #6b7280;
+}
+.mode-btn:hover {
+transform: translateY(-2px);
+}
+.input-group {
+margin-bottom: 1.5rem;
+}
+.input-group label {
+display: block;
+margin-bottom: 0.5rem;
+font-weight: 600;
+color: #374151;
+}
+.input-field {
+width: 100%;
+padding: 12px 16px;
+border: 2px solid #e5e7eb;
+border-radius: 10px;
+font-size: 1rem;
+transition: border-color 0.3s ease;
+}
+.input-field:focus {
+outline: none;
+border-color: #667eea;
+box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+textarea.input-field {
+resize: vertical;
+min-height: 120px;
+}
+.scan-btn {
+width: 100%;
+padding: 15px;
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+color: white;
+border: none;
+border-radius: 10px;
+font-size: 1.1rem;
+font-weight: 600;
+cursor: pointer;
+transition: all 0.3s ease;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 0.5rem;
+}
+.scan-btn:hover {
+transform: translateY(-2px);
+box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+.scan-btn:disabled {
+opacity: 0.6;
+cursor: not-allowed;
+transform: none;
+}
+/* Download report button for each result */
+.download-btn {
+	padding: 8px 12px;
+	background: #10b981;
+	color: white;
+	border: none;
+	border-radius: 8px;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+.download-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(16,185,129,0.2); }
+.download-pdf-btn {
+	padding: 8px 12px;
+	background: #2563eb;
+	color: white;
+	border: none;
+	border-radius: 8px;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+.download-pdf-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(37,99,235,0.2); }
+.spinner {
+width: 20px;
+height: 20px;
+border: 2px solid #ffffff40;
+border-top: 2px solid white;
+border-radius: 50%;
+animation: spin 1s linear infinite;
+}
+@keyframes spin {
+0% { transform: rotate(0deg); }
+100% { transform: rotate(360deg); }
+}
+.error-message {
+background: #fef2f2;
+border: 1px solid #fecaca;
+color: #dc2626;
+padding: 1rem;
+border-radius: 10px;
+margin-top: 1rem;
+display: flex;
+align-items: center;
+gap: 0.5rem;
+}
+.results-container {
+margin-top: 2rem;
+}
+.result-card {
+background: white;
+border-radius: 15px;
+box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+padding: 2rem;
+margin-bottom: 2rem;
+border-left: 5px solid #667eea;
+}
+.result-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 2rem;
+flex-wrap: wrap;
+gap: 1rem;
+}
+.site-info h2 {
+font-size: 1.8rem;
+color: #1f2937;
+display: flex;
+align-items: center;
+gap: 0.5rem;
+}
+.risk-badge {
+padding: 8px 16px;
+border-radius: 20px;
+font-weight: 600;
+display: flex;
+align-items: center;
+gap: 0.5rem;
+font-size: 0.9rem;
+}
+.risk-critical {
+background: #fef2f2;
+color: #dc2626;
+border: 2px solid #fecaca;
+}
+.risk-high {
+background: #fef2f2;
+color: #dc2626;
+border: 2px solid #fecaca;
+}
+.risk-medium {
+background: #fffbeb;
+color: #d97706;
+border: 2px solid #fed7aa;
+}
+.risk-low {
+background: #f0fdf4;
+color: #16a34a;
+border: 2px solid #bbf7d0;
+}
+.details-grid {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+gap: 2rem;
+margin-bottom: 2rem;
+}
+.details-section h3 {
+font-size: 1.3rem;
+color: #1f2937;
+margin-bottom: 1rem;
+display: flex;
+align-items: center;
+gap: 0.5rem;
+}
+.detail-row {
+display: flex;
+justify-content: space-between;
+padding: 0.75rem 0;
+border-bottom: 1px solid #f3f4f6;
+}
+.detail-row:last-child {
+border-bottom: none;
+}
+.detail-label {
+color: #6b7280;
+font-weight: 500;
+}
+.detail-value {
+font-weight: 600;
+color: #1f2937;
+text-align: right;
+max-width: 60%;
+}
+.detail-value.expired {
+color: #dc2626;
+}
+.detail-value.warning {
+color: #d97706;
+}
+.detail-value.success {
+color: #16a34a;
+}
+.recommendations {
+margin-top: 2rem;
+}
+.recommendations h3 {
+font-size: 1.3rem;
+color: #1f2937;
+margin-bottom: 1rem;
+}
+.recommendation {
+padding: 1rem;
+border-radius: 10px;
+margin-bottom: 1rem;
+border-left: 4px solid;
+}
+.recommendation.critical {
+background: #fef2f2;
+border-color: #dc2626;
+}
+.recommendation.urgent {
+background: #fff7ed;
+border-color: #ea580c;
+}
+.recommendation.high {
+background: #fef2f2;
+border-color: #dc2626;
+}
+.recommendation.warning {
+background: #fffbeb;
+border-color: #d97706;
+}
+.recommendation.medium {
+background: #eff6ff;
+border-color: #3b82f6;
+}
+.recommendation.success {
+background: #f0fdf4;
+border-color: #16a34a;
+}
+.recommendation-header {
+display: flex;
+justify-content: space-between;
+align-items: flex-start;
+margin-bottom: 0.5rem;
+}
+.recommendation-title {
+font-weight: 600;
+color: #1f2937;
+}
+.recommendation-type {
+padding: 2px 8px;
+border-radius: 12px;
+font-size: 0.75rem;
+font-weight: 600;
+}
+.recommendation-action {
+color: #6b7280;
+font-size: 0.9rem;
+}
+.error-result {
+text-align: center;
+padding: 2rem;
+color: #6b7280;
+}
+.error-result i {
+font-size: 3rem;
+color: #dc2626;
+margin-bottom: 1rem;
+}
+.footer {
+text-align: center;
+margin-top: 3rem;
+color: white;
+opacity: 0.8;
+}
+.hidden {
+display: none;
+}
+@media (max-width: 768px) {
+.header h1 {
+font-size: 2rem;
+}
+.scanner-modes {
+flex-direction: column;
+}
+.details-grid {
+grid-template-columns: 1fr;
+}
+.result-header {
+flex-direction: column;
+align-items: flex-start;
+}
+}
+</style>
+<!-- html2pdf (bundled jsPDF + html2canvas) for client-side PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+<div class="container">
+<!-- Header -->
+<div class="header">
+<h1>
+<i class="fas fa-shield-alt"></i>
+SSL/TLS Certificate Scanner
+</h1>
+<p>Scan websites for SSL certificate security, check expiry dates, identify weak
+signatures, and get actionable recommendations to improve your site's security.</p>
+</div>
+<!-- Scanner Interface -->
+<div class="scanner-card">
+<div class="scanner-modes">
+<button class="mode-btn active" onclick="switchMode('single')">
+<i class="fas fa-globe"></i> Single Site Scan
+</button>
+<button class="mode-btn" onclick="switchMode('multiple')">
+<i class="fas fa-list"></i> Multiple Sites Scan
+</button>
+</div>
+<!-- Single Site Mode -->
+<div id="single-mode">
+<div class="input-group">
+<label for="hostname">Website Hostname</label>
+<input type="text" id="hostname" class="input-field"
+placeholder="example.com">
+</div>
+<button class="scan-btn" onclick="scanSingleSite()">
+<i class="fas fa-search"></i>
+<span id="single-btn-text">Scan Certificate</span>
+</button>
+</div>
+<!-- Multiple Sites Mode -->
+<div id="multiple-mode" class="hidden">
+<div class="input-group">
+<label for="multiple-hosts">Website Hostnames (one per line, max 10)</label>
+<textarea id="multiple-hosts" class="input-field"
+placeholder="example.com&#10;google.com&#10;github.com"></textarea>
+</div>
+<button class="scan-btn" onclick="scanMultipleSites()">
+<i class="fas fa-search"></i>
+<span id="multiple-btn-text">Scan All Certificates</span>
+</button>
+</div>
+<!-- Error Message -->
+<div id="error-message" class="error-message hidden">
+<i class="fas fa-exclamation-triangle"></i>
+<span id="error-text"></span>
+</div>
+</div>
+<!-- Results Container -->
+<div id="results-container" class="results-container hidden">
+<!-- Results will be dynamically inserted here -->
+</div>
+<!-- Footer -->
+<div class="footer">
+<p>Team Members: Sathyajith G S, Binziya K A </p>
+<p style="font-size: 0.9rem; margin-top: 0.5rem;">SSL/TLS Certificate Scanner -
+Monitor, Analyze, Secure</p>
+</div>
+</div>
+<script>
+const API_BASE = 'http://localhost:5001/api';
+let currentMode = 'single';
+// Switch between single and multiple scan modes
+function switchMode(mode) {
+currentMode = mode;
+// Update button states
+document.querySelectorAll('.mode-btn').forEach(btn =>
+btn.classList.remove('active'));
+event.target.classList.add('active');
+// Show/hide appropriate forms
+if (mode === 'single') {
+document.getElementById('single-mode').classList.remove('hidden');
+document.getElementById('multiple-mode').classList.add('hidden');
+} else {
+document.getElementById('single-mode').classList.add('hidden');
+document.getElementById('multiple-mode').classList.remove('hidden');
+}
+// Clear previous results and errors
+clearResults();
+clearError();
+}
+// Scan single site
+async function scanSingleSite() {
+const hostname = document.getElementById('hostname').value.trim();
+if (!hostname) {
+showError('Please enter a hostname');
+return;
+}
+setLoading(true, 'single');
+clearError();
+clearResults();
+try {
+const response = await fetch(`${API_BASE}/scan`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+},
+body: JSON.stringify({ hostname }),
+});
+const data = await response.json();
+if (data.success) {
+displayResults([data.data]);
+} else {
+showError(data.error || 'Scan failed');
+}
+} catch (error) {
+	showError('Failed to connect to the scanner service. Make sure the backend is running on port 5001.');
+} finally {
+setLoading(false, 'single');
+}
+}
+// Scan multiple sites
+async function scanMultipleSites() {
+const hostsText = document.getElementById('multiple-hosts').value.trim();
+const sites = hostsText.split('\n')
+.map(site => site.trim())
+.filter(site => site.length > 0);
+if (sites.length === 0) {
+showError('Please enter at least one hostname');
+return;
+}
+if (sites.length > 10) {
+showError('Maximum 10 sites allowed');
+return;
+}
+setLoading(true, 'multiple');
+clearError();
+clearResults();
+try {
+const response = await fetch(`${API_BASE}/scan-multiple`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+},
+body: JSON.stringify({ sites }),
+});
+const data = await response.json();
+if (data.success) {
+displayResults(data.data);
+} else {
+showError(data.error || 'Scan failed');
+}
+} catch (error) {
+	showError('Failed to connect to the scanner service. Make sure the backend is running on port 5001.');
+} finally {
+setLoading(false, 'multiple');
+}
+}
+// Set loading state
+function setLoading(loading, mode) {
+const button = document.querySelector('.scan-btn');
+const textElement = document.getElementById(`${mode}-btn-text`);
+if (loading) {
+button.disabled = true;
+button.innerHTML = '<div class="spinner"></div><span>Scanning...</span>';
+} else {
+	button.disabled = false;
+	const icon = mode === 'single' ? '<i class="fas fa-search"></i>' : '<i class="fas fa-search"></i>';
+const text = mode === 'single' ? 'Scan Certificate' : 'Scan All Certificates';
+button.innerHTML = `${icon}<span>${text}</span>`;
+}
+}
+// Show error message
+function showError(message) {
+const errorDiv = document.getElementById('error-message');
+const errorText = document.getElementById('error-text');
+errorText.textContent = message;
+errorDiv.classList.remove('hidden');
+}
+// Clear error message
+function clearError() {
+document.getElementById('error-message').classList.add('hidden');
+}
+// Clear results
+function clearResults() {
+document.getElementById('results-container').classList.add('hidden');
+document.getElementById('results-container').innerHTML = '';
+}
+// Display scan results
+function displayResults(results) {
+const container = document.getElementById('results-container');
+container.innerHTML = '';
+	// Keep the latest results globally so download buttons can access them
+	window.latestScanResults = results;
+results.forEach((result, index) => {
+const resultCard = createResultCard(result, index);
+container.appendChild(resultCard);
+});
+container.classList.remove('hidden');
+}
+// Create individual result card
+function createResultCard(result, index) {
+const card = document.createElement('div');
+card.className = 'result-card';
+if (result.error) {
+card.innerHTML = `
+<div class="error-result">
+<i class="fas fa-exclamation-circle"></i>
+<h3>${result.hostname}</h3>
+<p style="color: #dc2626; margin-top: 0.5rem;">Error: ${result.error}</p>
+</div>
+`;
+return card;
+}
+const riskClass = result.security.riskLevel.toLowerCase();
+const riskIcon = getRiskIcon(result.security.riskLevel);
+card.innerHTML = `
+<div class="result-header">
+<div class="site-info">
+<h2><i class="fas fa-globe"></i> ${result.hostname}</h2>
+</div>
+<div class="risk-badge risk-${riskClass}">
+${riskIcon}
+<span>${result.security.riskLevel} RISK</span>
+</div>
+<div style="display:flex; gap:0.5rem; align-items:center;">
+	<button class="download-btn" onclick="downloadReport(${index})">
+		<i class="fas fa-download"></i>
+		TXT
+	</button>
+	<button class="download-pdf-btn" onclick="downloadReportPDF(${index})">
+		<i class="fas fa-file-pdf"></i>
+		PDF
+	</button>
+</div>
+</div>
+<div class="details-grid">
+<div class="details-section">
+<h3><i class="fas fa-certificate"></i> Certificate Details</h3>
+<div class="detail-row">
+<span class="detail-label">Subject:</span>
+<span class="detail-value">${result.certificate.subject.CN}</span>
+</div>
+<div class="detail-row">
+<span class="detail-label">Issuer:</span>
+<span class="detail-value">${result.certificate.issuer.O ||
+result.certificate.issuer.CN}</span>
+</div>
+<div class="detail-row">
+<span class="detail-label">Valid From:</span>
+<span
+class="detail-value">${formatDate(result.certificate.validFrom)}</span>
+</div>
+<div class="detail-row">
+<span class="detail-label">Valid Until:</span>
+<span class="detail-value
+${getDateClass(result.security)}">${formatDate(result.certificate.validTo)}</span>
+</div>
+<div class="detail-row">
+<span class="detail-label">Signature Algorithm:</span>
+<span class="detail-value ${result.security.isWeakSignature ? 'expired' :
+'success'}">${result.certificate.signatureAlgorithm}</span>
+</div>
+</div>
+<div class="details-section">
+<h3><i class="fas fa-key"></i> Security Analysis</h3>
+<div class="detail-row">
+<span class="detail-label">Days Until Expiry:</span>
+<span class="detail-value ${getExpiryClass(result.security)}">
+<i class="fas fa-clock"></i>
+${result.security.isExpired ? 'EXPIRED' : result.security.daysUntilExpiry}
+</span>
+</div>
+<div class="detail-row">
+<span class="detail-label">Protocol:</span>
+<span class="detail-value">${result.connection.protocol}</span>
+</div>
+<div class="detail-row">
+<span class="detail-label">Cipher:</span>
+<span class="detail-value">${result.connection.cipher}</span>
+</div>
+<div class="detail-row">
+<span class="detail-label">Self-Signed:</span>
+<span class="detail-value ${result.security.selfSigned ? 'warning' :
+'success'}">${result.security.selfSigned ? 'Yes' : 'No'}</span>
+</div>
+</div>
+</div>
+<div class="recommendations">
+<h3>Security Recommendations</h3>
+${result.recommendations.map(rec => createRecommendation(rec)).join('')}
+</div>
+`;
+return card;
+}
+// Create recommendation element
+function createRecommendation(rec) {
+const typeClass = rec.type.toLowerCase();
+return `
+<div class="recommendation ${typeClass}">
+<div class="recommendation-header">
+<div class="recommendation-title">${rec.message}</div>
+<div class="recommendation-type" style="background:
+${getRecommendationTypeColor(rec.type)};">
+${rec.type}
+</div>
+</div>
+<div class="recommendation-action">${rec.action}</div>
+</div>
+`;
+}
+// Helper functions
+function getRiskIcon(riskLevel) {
+switch (riskLevel) {
+case 'CRITICAL': return '<i class="fas fa-times-circle"></i>';
+case 'HIGH': return '<i class="fas fa-exclamation-triangle"></i>';
+case 'MEDIUM': return '<i class="fas fa-exclamation-circle"></i>';
+case 'LOW': return '<i class="fas fa-check-circle"></i>';
+default: return '<i class="fas fa-shield-alt"></i>';
+}
+}
+function getDateClass(security) {
+if (security.isExpired) return 'expired';
+if (security.daysUntilExpiry <= 30) return 'warning';
+return 'success';
+}
+function getExpiryClass(security) {
+if (security.isExpired) return 'expired';
+if (security.daysUntilExpiry <= 7) return 'expired';
+if (security.daysUntilExpiry <= 30) return 'warning';
+return 'success';
+}
+function getRecommendationTypeColor(type) {
+switch (type) {
+case 'CRITICAL': return '#fca5a5';
+case 'URGENT': return '#fed7aa';
+case 'HIGH': return '#fca5a5';
+case 'WARNING': return '#fde68a';
+case 'MEDIUM': return '#93c5fd';
+case 'SUCCESS': return '#86efac';
+default: return '#d1d5db';
+}
+}
+function formatDate(dateString) {
+const date = new Date(dateString);
+return date.toLocaleDateString('en-US', {
+year: 'numeric',
+month: 'long',
+day: 'numeric',
+hour: '2-digit',
+minute: '2-digit'
+});
+}
+// Generate a human-readable report for a scan result
+function generateReport(result) {
+	const lines = [];
+	lines.push(`SSL/TLS Certificate Scan Report for ${result.hostname}`);
+	lines.push('='.repeat(60));
+	lines.push('');
+	// Certificate
+	lines.push('Certificate Details:');
+	const cert = result.certificate || {};
+	lines.push(`  Subject CN: ${cert.subject && cert.subject.CN || 'N/A'}`);
+	lines.push(`  Issuer: ${cert.issuer && (cert.issuer.O || cert.issuer.CN) || 'N/A'}`);
+	lines.push(`  Valid From: ${cert.validFrom || cert.valid_from || 'N/A'}`);
+	lines.push(`  Valid To: ${cert.validTo || cert.valid_to || 'N/A'}`);
+	lines.push(`  Serial Number: ${cert.serialNumber || 'N/A'}`);
+	lines.push(`  Fingerprint (SHA1): ${cert.fingerprint || 'N/A'}`);
+	lines.push(`  Fingerprint (SHA256): ${cert.fingerprint256 || 'N/A'}`);
+	lines.push(`  Signature Algorithm: ${cert.signatureAlgorithm || cert.sigalg || 'N/A'}`);
+	lines.push('');
+	// Connection
+	lines.push('Connection Details:');
+	const conn = result.connection || {};
+	lines.push(`  Protocol: ${conn.protocol || 'N/A'}`);
+	lines.push(`  Raw Cipher String: ${conn.cipher || 'N/A'}`);
+	// Parse cipher into readable parts
+	const cipherInfo = parseCipher(conn.cipher || '', conn.protocol || '');
+	if (cipherInfo) {
+		lines.push('  Parsed Cipher Details:');
+		for (const [k, v] of Object.entries(cipherInfo)) {
+			lines.push(`    ${k}: ${v}`);
+		}
+	}
+	lines.push('');
+	// Security analysis
+	lines.push('Security Analysis:');
+	const sec = result.security || {};
+	lines.push(`  Risk Level: ${sec.riskLevel || sec.riskLevel || 'N/A'}`);
+	lines.push(`  Is Expired: ${sec.isExpired ? 'Yes' : 'No'}`);
+	lines.push(`  Days Until Expiry: ${sec.daysUntilExpiry != null ? sec.daysUntilExpiry : 'N/A'}`);
+	lines.push(`  Signature Weak: ${sec.isWeakSignature ? 'Yes' : 'No'}`);
+	lines.push(`  Key Size: ${sec.keySize || 'Unknown'}`);
+	lines.push(`  Self-signed: ${sec.selfSigned ? 'Yes' : 'No'}`);
+	lines.push('');
+	// Recommendations
+	lines.push('Recommendations:');
+	const recs = result.recommendations || [];
+	if (recs.length === 0) lines.push('  None');
+	recs.forEach((r, i) => {
+		lines.push(`  ${i + 1}. [${r.type}] ${r.message}`);
+		if (r.action) lines.push(`     Action: ${r.action}`);
+	});
+	lines.push('');
+	lines.push('Raw JSON (for debugging):');
+	lines.push(JSON.stringify(result, null, 2));
+	return lines.join('\n');
+}
+
+// Parse a cipher string into human-friendly parts (best-effort)
+function parseCipher(cipherStr, protocol) {
+	if (!cipherStr) return null;
+	const info = {};
+	// Common TLS 1.3 style: TLS_AES_256_GCM_SHA384
+	if (cipherStr.includes('_')) {
+		const parts = cipherStr.split('_');
+		// e.g., [TLS, AES, 256, GCM, SHA384]
+		info.KDF = parts[0];
+		info.Cipher = parts.slice(1, parts.length - 1).join('_');
+		info.Hash = parts[parts.length - 1];
+		// Try to extract key size if present
+		const sizeMatch = cipherStr.match(/(\d{3})/);
+		if (sizeMatch) info.KeySize = `${sizeMatch[1]} bits`;
+		return info;
+	}
+	// OpenSSL style: ECDHE-RSA-AES256-GCM-SHA384
+	if (cipherStr.includes('-')) {
+		const parts = cipherStr.split('-');
+		// key exchange, auth, cipher+mode, hash
+		info.KeyExchange = parts[0] || '';
+		// auth might be RSA or ECDSA
+		if (parts.length >= 2) info.Authentication = parts[1];
+		// cipher + mode
+		if (parts.length >= 3) info.Cipher = parts[2];
+		if (parts.length >= 4) info.Hash = parts[3];
+		const sizeMatch = cipherStr.match(/(\d{3})/);
+		if (sizeMatch) info.KeySize = `${sizeMatch[1]} bits`;
+		return info;
+	}
+	// Fallback: just return raw string
+	return { Raw: cipherStr, Protocol: protocol };
+}
+
+// Trigger download of a text report for the given result index
+function downloadReport(index) {
+	const results = window.latestScanResults || [];
+	const result = results[index];
+	if (!result) {
+		alert('Report not available. Please refresh and try again.');
+		return;
+	}
+	const report = generateReport(result);
+	const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	const safeHost = (result.hostname || 'report').replace(/[^a-z0-9.-]/gi, '_');
+	a.href = url;
+	a.download = `${safeHost}-ssl-report.txt`;
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	URL.revokeObjectURL(url);
+}
+// Download a nicely formatted PDF report for the given result index
+async function downloadReportPDF(index) {
+	const results = window.latestScanResults || [];
+	const result = results[index];
+	if (!result) {
+		alert('Report not available. Please refresh and try again.');
+		return;
+	}
+	const safeHost = (result.hostname || 'report').replace(/[^a-z0-9.-]/gi, '_');
+
+	// First try: fast endpoint that accepts pre-computed scan data (no re-scan)
+	try {
+		const resp = await fetch(`${API_BASE}/report-from-data`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(result)
+		});
+		if (resp.ok) {
+			const blob = await resp.blob();
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `${safeHost}-ssl-report.pdf`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+			return;
+		}
+	} catch (err) {
+		console.warn('report-from-data endpoint failed, trying /api/report:', err);
+	}
+
+	// Second try: scan endpoint (performs a fresh scan then generates PDF)
+	try {
+		const resp = await fetch(`${API_BASE}/report`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ hostname: result.hostname })
+		});
+		if (resp.ok) {
+			const blob = await resp.blob();
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `${safeHost}-ssl-report.pdf`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+			return;
+		}
+	} catch (err) {
+		console.warn('Server PDF endpoint failed, falling back to client-side generation:', err);
+	}
+
+	// Fallback: client-side HTML->PDF generation using html2pdf library
+
+	// Client-side fallback (same visual layout)
+	const container = document.createElement('div');
+	container.style.fontFamily = 'Arial, Helvetica, sans-serif';
+	container.style.padding = '20px';
+	container.style.color = '#111827';
+	container.style.maxWidth = '800px';
+	container.innerHTML = `
+		<h1>SSL/TLS Certificate Scan Report</h1>
+		<h2>${escapeHtml(result.hostname)}</h2>
+		<hr />
+		<h3>Certificate Details</h3>
+		<p><strong>Subject CN:</strong> ${escapeHtml(result.certificate?.subject?.CN || 'N/A')}</p>
+		<p><strong>Issuer:</strong> ${escapeHtml((result.certificate?.issuer?.O) || result.certificate?.issuer?.CN || 'N/A')}</p>
+		<p><strong>Valid From:</strong> ${escapeHtml(result.certificate?.validFrom || result.certificate?.valid_from || 'N/A')}</p>
+		<p><strong>Valid To:</strong> ${escapeHtml(result.certificate?.validTo || result.certificate?.valid_to || 'N/A')}</p>
+		<p><strong>Serial:</strong> ${escapeHtml(result.certificate?.serialNumber || 'N/A')}</p>
+		<p><strong>Fingerprint (SHA1):</strong> ${escapeHtml(result.certificate?.fingerprint || 'N/A')}</p>
+		<p><strong>Fingerprint (SHA256):</strong> ${escapeHtml(result.certificate?.fingerprint256 || 'N/A')}</p>
+		<h3>Connection Details</h3>
+		<p><strong>Protocol:</strong> ${escapeHtml(result.connection?.protocol || 'N/A')}</p>
+		<p><strong>Cipher:</strong> ${escapeHtml(result.connection?.cipher || 'N/A')}</p>
+		<div>
+			<h4>Parsed Cipher Details</h4>
+			<pre style="background:#f3f4f6;padding:10px;border-radius:6px">${escapeHtml(JSON.stringify(parseCipher(result.connection?.cipher || '', result.connection?.protocol || ''), null, 2))}</pre>
+		</div>
+		<h3>Security Analysis</h3>
+		<p><strong>Risk Level:</strong> ${escapeHtml(result.security?.riskLevel || 'N/A')}</p>
+		<p><strong>Expired:</strong> ${result.security?.isExpired ? 'Yes' : 'No'}</p>
+		<p><strong>Days Until Expiry:</strong> ${result.security?.daysUntilExpiry ?? 'N/A'}</p>
+		<p><strong>Weak Signature:</strong> ${result.security?.isWeakSignature ? 'Yes' : 'No'}</p>
+		<p><strong>Key Size:</strong> ${result.security?.keySize || 'Unknown'}</p>
+		<h3>Recommendations</h3>
+		<ul>
+			${(result.recommendations || []).map(r => `<li><strong>${escapeHtml(r.type)}</strong>: ${escapeHtml(r.message)}<br/><em>${escapeHtml(r.action || '')}</em></li>`).join('')}
+		</ul>
+		<hr />
+		<h4>Raw JSON</h4>
+		<pre style="background:#111827;color:#f9fafb;padding:12px;border-radius:6px">${escapeHtml(JSON.stringify(result, null, 2))}</pre>
+	`;
+
+	document.body.appendChild(container);
+	const opt = {
+		margin:       12,
+		filename:     `${safeHost}-ssl-report.pdf`,
+		image:        { type: 'jpeg', quality: 0.98 },
+		html2canvas:  { scale: 2, useCORS: true },
+		jsPDF:        { unit: 'pt', format: 'a4', orientation: 'portrait' }
+	};
+	html2pdf().set(opt).from(container).save().then(() => {
+		document.body.removeChild(container);
+	}).catch(err => {
+		document.body.removeChild(container);
+		console.error(err);
+		alert('Failed to generate PDF report. See console for details.');
+	});
+}
+
+// small helper to escape HTML in generated markup
+function escapeHtml(str) {
+	if (str == null) return '';
+	return String(str).replace(/[&<>"'`]/g, function (s) {
+		return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;', '`':'&#96;'})[s];
+	});
+}
+// Allow Enter key to trigger scan in single mode
+document.getElementById('hostname').addEventListener('keypress', function(e) {
+if (e.key === 'Enter') {
+scanSingleSite();
+}
+});
+</script>
+</body>
+</html>
